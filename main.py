@@ -1,7 +1,7 @@
 import hid
 import time
 from dataclasses import dataclass
-from utils import apply_deadzone, normalize_axis, normalize_trigger
+from utils import apply_deadzone, display_controller_state, normalize_axis, normalize_trigger
 
 DS_VENDOR_ID = 0x054C
 DS_PRODUCT_ID = 0x0CE6
@@ -46,7 +46,7 @@ def find_ds():
             device["vendor_id"] == DS_VENDOR_ID
             and device["product_id"] == DS_PRODUCT_ID
         ):
-            print(device)
+            # print(device)
             return device
 
     return None
@@ -66,8 +66,11 @@ def main():
         report = gamepad.read(64)
 
         # print(' '.join(f'{i}:{report[i]:3d}' for i in range(8, 12)))
-        state = ControllerState.from_report(report)
-        print(state)
+        # state = ControllerState.from_report(report)
+        # print(state)
+        # Display the current state of the controller
+        display_controller_state(ControllerState.from_report(report))
+        
 
     gamepad.close()
 
