@@ -1,3 +1,8 @@
+# CRSF values
+CRSF_MIN = 172
+CRSF_MAX = 1811
+CRSF_CENTER = 992
+
 
 # Apply deadzone for the analog sticks (drifting)
 def apply_deadzone(value: int, center: int = 128,  deadzone: int = 8) -> int:
@@ -31,3 +36,9 @@ def display_controller_state(state: "ControllerState"):
     )
     print(output, end="\r", flush=True)
     
+# Convert to CRSF range
+def axis_to_crsf(value: float) -> int:
+    return round((value + 1.0) / 2.0 * (CRSF_MAX - CRSF_MIN) + CRSF_MIN)
+
+def trigger_to_crsf(value: float) -> int:
+    return round(value * (CRSF_MAX - CRSF_MIN) + CRSF_MIN)
