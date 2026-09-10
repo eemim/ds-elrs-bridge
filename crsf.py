@@ -27,7 +27,7 @@ def build_crsf_packet(payload: bytes) -> bytes:
     length = len(payload) + 2  # type + payload
     packet_type = 0x16  # CRSF frame type for RC channels
     packet = bytes([sync_byte, length, packet_type]) + payload
-    crc = crsf_crc8(packet[1:])  # Calculate CRC8 for length + type + payload
+    crc = crsf_crc8(packet[2:])
     return packet + bytes([crc])
 
 def channels_to_packet(channels: list[int]) -> bytes:

@@ -6,7 +6,7 @@ CRSF_CENTER = 992
 
 # Apply deadzone for the analog sticks (drifting)
 def apply_deadzone(value: int, center: int = 128,  deadzone: int = 8) -> int:
-    if abs(value - center) < deadzone:
+    if abs(value - center) <= deadzone:
         return center
     return value
 

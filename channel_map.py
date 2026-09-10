@@ -1,3 +1,5 @@
+from utils import axis_to_crsf
+
 def state_to_channels(state: "ControllerState") -> list[int]:
     """
     Convert the controller state to a list of channel values in CRSF range.

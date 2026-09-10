@@ -1,7 +1,16 @@
 import hid
-import time
 from dataclasses import dataclass
-from utils import apply_deadzone, display_controller_state, normalize_axis, normalize_trigger
+import argparse
+
+from crsf import channels_to_packet
+from utils import (
+    apply_deadzone,
+    display_controller_state,
+    normalize_axis,
+    normalize_trigger
+)
+from serial_sender import send_crsf_packet, open_serial_port
+from channel_map import state_to_channels
 
 DS_VENDOR_ID = 0x054C
 DS_PRODUCT_ID = 0x0CE6
@@ -51,28 +60,67 @@ def find_ds():
 
     return None
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="DS Controller to CRSF Bridge")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Run without serial port communication, print channel values instead.",
+    )
+    parser.add_argument(
+        "--port",
+        default="/dev/ttyUSB0",
+        help="Serial port for ELRS TX module (default: /dev/ttyUSB0)",
+    )
+    return parser.parse_args()
+
 def main():
+    args = parse_args()
+    
     ds_device = find_ds()
     if not ds_device:
         print("No DS controller found.")
         return
 
-    print(f"Found DS controller at path: {ds_device['path']}")
+    try:
+        # print(f"Found DS controller at path: {ds_device['path']}")
+        gamepad = hid.Device(path=ds_device["path"])
+        print("DS controller opened successfully.")
+    except Exception as e:
+        print(f"Failed to open DS controller: {e}")
+        return
 
-    gamepad = hid.Device(path=ds_device["path"])
-    print("DS controller opened successfully.")
+    if not args.dry_run:
+        try:
+            serial_port = open_serial_port("/dev/ttyUSB0") #adjust the serial port as needed
+        except Exception as e:
+            print(f"Failed to open serial port: {e}")
+            gamepad.close()
+            return
 
-    while True:
-        report = gamepad.read(64)
+    try:
+        while True:
+            report = gamepad.read(64)
+            state = ControllerState.from_report(report)
+            channels = state_to_channels(state)
+            packet = channels_to_packet(channels)
+            if not args.dry_run:
+                send_crsf_packet(serial_port, packet)
+            display_controller_state(state)
+            # print(' '.join(f'{i}:{report[i]:3d}' for i in range(8, 12)))
+            # state = ControllerState.from_report(report)
+            # print(state)
+            # Display the current state of the controller
+            # display_controller_state(ControllerState.from_report(report))
 
-        # print(' '.join(f'{i}:{report[i]:3d}' for i in range(8, 12)))
-        # state = ControllerState.from_report(report)
-        # print(state)
-        # Display the current state of the controller
-        display_controller_state(ControllerState.from_report(report))
-        
-
-    gamepad.close()
+    except KeyboardInterrupt:
+        print("\nExiting...")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        gamepad.close()
+        if not args.dry_run:
+            serial_port.close()
 
 
 if __name__ == "__main__":
